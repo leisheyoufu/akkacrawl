@@ -1,0 +1,23 @@
+# intellij files
+build-idea/
+*.iml
+*.ipr
+*.iws
+*.jar
+.idea
+logs/
+
+# eclipse files
+.project
+.classpath
+.settings
+build-eclipse/
+
+# netbeans files
+nb-configuration.xml
+nbactions.xml
+
+# gradle stuff
+.gradle/
+build/
+libs/

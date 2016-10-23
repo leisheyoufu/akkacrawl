@@ -1,0 +1,100 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'application'
+
+
+project.ext {
+    Map<String, String> versions = new HashMap<>()
+    versions.put("jackson", "2.8.4")
+    versions.put("akkacrawl", "0.1")
+    project.ext.versions = versions
+}
+
+group 'com.lei'
+version "${versions.akkacrawl}"
+mainClassName = 'com.lei.akkacrawl.AkkaCrawl'
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.lei.akkacrawl.AkkaCrawl'
+        //attributes 'Class-Path': new File('libs').list().findAll {
+        //    it.endsWith('.jar') }.collect { "$it" }.join(' ')
+
+    }
+}
+
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'java'
+        }
+       resources {
+            srcDir 'resources'
+       }
+    }
+    test {
+        java {
+            srcDir 'test'
+        }
+    }
+
+}
+
+task taskJar(type:Jar, dependsOn: build) {
+    from configurations.runtime
+    from 'build/classes'
+    destinationDir = file('build/libs')
+}
+/*
+task copyJar(type: Copy, dependsOn: taskJar) {
+    from configurations.runtime
+    into 'libs'
+}
+*/
+
+task clearJar(type:Delete){
+    delete 'build','libs'
+}
+
+task release(type: Copy,dependsOn: [clearJar,taskJar]) {
+    /*
+    from('build/libs') {
+        include '*.jar'
+    }
+    into ('libs')
+    */
+}
+
+startScripts {
+    classpath += files('src/dist/XxxAPlaceHolderForAConfigxxX')
+    doLast {
+        def windowsScriptFile = file getWindowsScript()
+        def unixScriptFile    = file getUnixScript()
+        windowsScriptFile.text = windowsScriptFile.text.replace('%APP_HOME%\\lib\\XxxAPlaceHolderForAConfigxxX', '%APP_HOME%\\config')
+        unixScriptFile.text  = unixScriptFile.text.replace('$APP_HOME/lib/XxxAPlaceHolderForAConfigxxX', '$APP_HOME/config')
+    }
+}
+
+dependencies {
+    compile "com.google.inject:guice:4.1.0"
+    compile "commons-io:commons-io:2.4"
+    compile "com.typesafe.akka:akka-actor_2.11:2.4.10"
+    compile "com.typesafe.akka:akka-cluster-tools_2.11:2.4.10"
+    compile "org.jsoup:jsoup:1.8.3"
+    compile group: "org.apache.httpcomponents", name: "httpclient", version: "4.3.6"
+    compile group: "net.htmlparser.jericho", name: "jericho-html", version: "3.4"
+    compile group: "org.apache.httpcomponents", name: "httpasyncclient", version: "4.1.1"
+    compile "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
+    compile "net.sf.jopt-simple:jopt-simple:5.0.3"
+    compile "org.apache.logging.log4j:log4j-core:2.7"
+    testCompile group: "junit", name: "junit", version: "4.11"
+    runtime files("src/dist/config")
+}
