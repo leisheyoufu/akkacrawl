@@ -6,6 +6,7 @@ import com.lei.akkacrawl.actor.CrawlActor;
 import com.lei.akkacrawl.actor.CrawlSystem;
 import com.lei.akkacrawl.parser.ParserModule;
 import com.lei.akkacrawl.parser.Parser;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
@@ -24,6 +25,7 @@ import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mozilla.universalchardet.UniversalDetector;
 
 public class AsyncHttpHandler {
     protected Logger logger = LogManager.getLogger(this.getClass().getName());
@@ -59,6 +61,7 @@ public class AsyncHttpHandler {
                 .setUnmappableInputAction(CodingErrorAction.IGNORE)
                 .build();
         asyncClientBuilder.setDefaultConnectionConfig(connectionConfig);
+        asyncClientBuilder.disableCookieManagement();
 
         System.setProperty("http.maxConnections", "100");
         System.setProperty("http.conn-manager.timeout", String.valueOf(TIMEOUT_2_MINS_IN_MILLIS)); // 2 mins
@@ -99,7 +102,6 @@ public class AsyncHttpHandler {
 
     private abstract class HttpFutureCallback<T extends HttpResponse> implements FutureCallback<T> {
         private Map<FutureCallback, TaskEntry> taskMap;
-        private CrawlActor crawlActor;
 
         public HttpFutureCallback(Map taskMap) {
             this.taskMap = taskMap;
@@ -108,8 +110,17 @@ public class AsyncHttpHandler {
         @Override
         public void failed(Exception ex) {
             TaskEntry entry = taskMap.get(this);
-            logger.error("Failed " + entry.getRetry() + ": " + entry.getCurl().toString());
+            logger.error("Failed retry time " + entry.getRetry() + ": " + entry.getCurl().toString());
             entry.setRetry(entry.getRetry()+1);
+            if (entry.getRetry() < 5) {
+                if (entry.getType() == TaskEntry.TaskType.DOWNLOAD) {
+                    CrawlSystem.downloadActor.tell(entry, null);
+                } else if(entry.getType() == TaskEntry.TaskType.GET) {
+                    CrawlSystem.crawlActor.tell(entry, null);
+                }
+            } else {
+                CrawlSystem.terminateActor.tell(-1, null);
+            }
         }
 
         @Override
@@ -117,6 +128,7 @@ public class AsyncHttpHandler {
             TaskEntry entry = taskMap.get(this);
             logger.info("Canceled: " + entry.getCurl().toString());
             entry.setState(TaskEntry.State.ERROR);
+            CrawlSystem.terminateActor.tell(-1, null);
         }
     }
     private class HttpGETFutureCallback<T extends HttpResponse> extends HttpFutureCallback<T>
@@ -132,8 +144,14 @@ public class AsyncHttpHandler {
             Parser parser = injector.getInstance(Parser.class);
             Set<TaskEntry> taskSet;
             try {
+                UniversalDetector detector = new UniversalDetector(null);
+                byte []buf = IOUtils.toByteArray(result.getEntity().getContent());
+                detector.handleData(buf,0,buf.length);
+                detector.dataEnd();
+                String encoding = detector.getDetectedCharset();
+                detector.reset();
                 String contentType = result.getHeaders("Content-Type")[0].getValue();
-                taskSet = parser.parse(entry, EntityUtils.toString( result.getEntity()), contentType);
+                taskSet = parser.parse(entry,IOUtils.toString(buf, encoding), contentType);
                 for (TaskEntry t:taskSet) {
                     if (t.getType() == TaskEntry.TaskType.DOWNLOAD) {
                         CrawlSystem.downloadActor.tell(t, null);
@@ -158,6 +176,10 @@ public class AsyncHttpHandler {
         public void completed(T result) {
             TaskEntry entry = taskMap.get(this);
             try {
+                File dir = new File("s:/pic");
+                if (!dir.exists()) {
+                    dir.mkdir();
+                }
                 FileOutputStream out = new FileOutputStream(new File(entry.getDownloadDest()));
                 result.getEntity().writeTo(out);
                 out.close();

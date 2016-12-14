@@ -87,6 +87,7 @@ dependencies {
     compile "commons-io:commons-io:2.4"
     compile "com.typesafe.akka:akka-actor_2.11:2.4.10"
     compile "com.typesafe.akka:akka-cluster-tools_2.11:2.4.10"
+    compile "com.googlecode.juniversalchardet:juniversalchardet:1.0.3"
     compile "org.jsoup:jsoup:1.8.3"
     compile group: "org.apache.httpcomponents", name: "httpclient", version: "4.3.6"
     compile group: "net.htmlparser.jericho", name: "jericho-html", version: "3.4"
