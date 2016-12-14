@@ -2,7 +2,6 @@ package com.lei.akkacrawl;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.lei.akkacrawl.actor.CrawlActor;
 import com.lei.akkacrawl.actor.CrawlSystem;
 import com.lei.akkacrawl.parser.ParserModule;
 import com.lei.akkacrawl.parser.Parser;
@@ -22,7 +21,6 @@ import org.apache.http.config.ConnectionConfig;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mozilla.universalchardet.UniversalDetector;

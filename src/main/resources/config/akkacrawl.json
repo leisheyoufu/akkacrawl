@@ -1,14 +1,23 @@
 {
   "site":  {
-    "url": "http://bbs.tianya.cn/list-develop-1.shtml",
-    "template": "0",
-    "user": "量子之鹰",
-    "delta": "2"
+    "url": "http://www.airenti99.com/yazhourenti/201612/7588.html",
+    "template": "1"
   },
-    "export": {
+  "export": {
     "path": "/var/log/java"
   }
 }
+//{
+//  "site":  {
+//    "url": "http://bbs.tianya.cn/list-develop-1.shtml",
+//    "template": "0",
+//    "user": "量子之鹰",
+//    "delta": "2"
+//  },
+//    "export": {
+//    "path": "/var/log/java"
+//  }
+//}
 // if not the index
 //{
 //  "site":  {
