@@ -138,6 +138,8 @@ public class AsyncHttpHandler {
         public void completed(T result) {
             TaskEntry entry = taskMap.get(this);
             entry.setState(TaskEntry.State.RUNNING);
+            // domain --> bind service to Target service, this mapping is constructed only once as it is initialized in the static scope
+            // parser.process --> service.process
             Injector injector = Guice.createInjector(new ParserModule(entry.getCurl().getUri().getHost()));
             Parser parser = injector.getInstance(Parser.class);
             Set<TaskEntry> taskSet;
@@ -149,6 +151,7 @@ public class AsyncHttpHandler {
                 String encoding = detector.getDetectedCharset();
                 detector.reset();
                 String contentType = result.getHeaders("Content-Type")[0].getValue();
+                // buf to string with the target charset encoding
                 taskSet = parser.parse(entry,IOUtils.toString(buf, encoding), contentType);
                 for (TaskEntry t:taskSet) {
                     if (t.getType() == TaskEntry.TaskType.DOWNLOAD) {
